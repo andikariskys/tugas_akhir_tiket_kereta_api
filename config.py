@@ -1,6 +1,8 @@
 import mysql.connector
 import os
 import time
+import random
+from datetime import datetime 
 
 class Config:
     def __init__(self):
@@ -9,32 +11,90 @@ class Config:
         self.login_id_penumpang = 0
         self.login_nama_penumpang = ''
 
+    def lihat_daftar_tiket(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("Daftar Kereta Api beserta tujuannya.")
+        query = "SELECT nama_kereta, kelas, id_tiket, tujuan, berangkat, waktu_berangkat FROM kereta_api INNER JOIN tiket ON kereta_api.id_kereta = tiket.id_kereta"
+        self.conn.execute(query)
+        print(f"| {'-'*4} | {'-'*20} | {'-'*20} | {'-'*20} | {'-'*20} | {'-'*10} |")
+        print(f"| {'ID':<4} | {'Nama Kereta':<20} | {'Berangkat':<20} | {'Tujuan':<20} | {'Waktu Keberangkatan':<20} | {'Kelas' :<10} |")
+        print(f"| {'-'*4} | {'-'*20} | {'-'*20} | {'-'*20} | {'-'*20} | {'-'*10} |")
+
+        for (nama_kereta, kelas, id_tiket, tujuan, berangkat, waktu_berangkat) in self.conn:
+            print(f"| {id_tiket :<4} | {nama_kereta :<20} | {berangkat :<20} | {tujuan :<20} | {waktu_berangkat :%m/%d/%Y, %H:%M:%S} | {kelas :<10} |")
+
+        print(f"| {'-'*4} | {'-'*20} | {'-'*20} | {'-'*20} | {'-'*20} | {'-'*10} |")
+
+    def beli_tiket(self):
+        print("Masukkan ID tiket yang ingin di beli")
+        pilih_tiket = input("=> ")
+        no_kursi = random.randint(1,40)
+        tgl_pembelian = datetime.now()
+        query = "INSERT INTO pembelian VALUES(null, %s, %s, %s, %s)"
+        data_pembelian = (self.login_id_penumpang, pilih_tiket, no_kursi, tgl_pembelian)
+        self.conn.execute(query, data_pembelian)
+        self.koneksi.commit()
+        print("Selamat, pembelian tiket Anda berhasil!")
+        time.sleep(3)
+    
+    def riwayat_pembelian(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("Berikut adalah riwayat pembelian tiket Anda:")
+        query = "SELECT id_pembelian, id_tiket, tgl_pembelian FROM pembelian WHERE id_penumpang= " + str(self.login_id_penumpang)
+        self.conn.execute(query)
+        print(f"| {'-'*3} | {'-'*8} | {'-'*20} |")
+        print(f"| {'ID' :<3} | {'ID Tiket' :<8} | {'Tgl Pembelian' :<20} |")
+        print(f"| {'-'*3} | {'-'*8} | {'-'*20} |")
+
+        for (id_pembelian, id_tiket, tgl_pembelian) in self.conn:
+            print(f"| {id_pembelian :<3} | {id_tiket :<8} | {tgl_pembelian :%m/%d/%Y, %H:%M:%S} |")
+        
+        print(f"| {'-'*3} | {'-'*8} | {'-'*20} |")
+
+        print("Tekan 'enter' untuk kembali atau masukkan ID untuk melihat detail tiket")
+        pilih_id_pembelian = input("=> ")
+        if pilih_id_pembelian != '':
+            query = "SELECT no_nik, nama, tiket.id_tiket, berangkat, waktu_berangkat, nama_kereta, kelas, tujuan, id_pembelian, no_kursi, tgl_pembelian FROM penumpang INNER JOIN pembelian ON penumpang.id_penumpang = pembelian.id_penumpang INNER JOIN tiket ON pembelian.id_tiket = tiket.id_tiket INNER JOIN kereta_api ON tiket.id_kereta = kereta_api.id_kereta WHERE id_pembelian=" + pilih_id_pembelian
+            self.conn.execute(query)
+            for (no_nik, nama, id_tiket, berangkat, waktu_berangkat, nama_kereta, kelas, tujuan, id_pembelian, no_kursi, tgl_pembelian) in self.conn:
+                print(f"| {'-'*43} |")
+                print(f"| {'Nomor tiket' :<20} | {str(id_tiket) + '/' + str(id_pembelian) :<20} |")
+                print(f"| {'Nomor identitas' :<20} | {no_nik :<20} |")
+                print(f"| {'Nama Penumpang' :<20} | {nama :<20} |")
+                print(f"| {'Waktu keberangkatan' :<20} | {waktu_berangkat :%m/%d/%Y, %H:%M:%S} |")
+                print(f"| {'-'*43} |")
+                print(f"| {'Kelas ' + kelas + ' dengan nomor kursi ' + str(no_kursi) :<43} |")
+                print(f"| {'Dari stasiun ' + berangkat + ' ke stasiun ' + tujuan :<43} |")
+                print(f"| {'Kereta Api ' + nama_kereta :<43} |")
+                print(f"| {'-'*43} |")
+            print("Tekan 'enter' untuk kembali ke menu sebelumnya")
+            input("=> ")
+
     def sign_in_menu(self):
         ulangi = True
         while ulangi:
+            os.system('cls' if os.name == 'nt' else 'clear')
             print("selamat datang, ", self.login_nama_penumpang, "!")
-            print("1. Lihat Daftar Kereta")
-            print("2. Lihat Daftar Tiket")
-            print("3. Beli Tiket")
-            print("4. Riwayat Pembelian Tiket")
-            print("5. Keluar")
+            print("1. Lihat Daftar Tiket")
+            print("2. Beli Tiket")
+            print("3. Riwayat Pembelian Tiket")
+            print("4. Keluar")
             while True:
                 print("Masukkan pilihan Anda (1/2/3/4) lalu tekan 'enter'")
                 pilihan = input("=> ")
                 if pilihan == "1":
-                    # lihat daftar kereta
+                    self.lihat_daftar_tiket()
+                    print("Tekan 'enter' untuk kembali ke menu sebelumnya")
+                    input("")
                     break
                 elif pilihan == "2":
-                    # lihat daftar tiket
+                    self.lihat_daftar_tiket()
+                    self.beli_tiket()
                     break
                 elif pilihan == "3":
-                    # lihat daftar tiket
-                    # beli tiket
+                    self.riwayat_pembelian()
                     break
                 elif pilihan == "4":
-                    # lihat riwayat pembelian tiket
-                    break
-                elif pilihan == "5":
                     print("Sign Out berhasil")
                     time.sleep(3)
                     ulangi = False
@@ -104,23 +164,6 @@ class Config:
             else:
                 print("Pilihan yang Anda masukkan salah/tidak ada.")
 
-    def get_kereta_api(self):
-        query = "SELECT * FROM kereta_api"
-        self.conn.execute(query)
-        for (id_kereta, nama_kereta, kelas, tujuan) in self.conn:
-            print("{} - {} - {} - {}".format(id_kereta, nama_kereta, kelas, tujuan))
-
-    def get_tiket(self):
-        query = "SELECT * FROM tiket"
-        self.conn.execute(query)
-        for (id_tiket, id_kereta, berangkat, waktu_berangkat, jumlah_kursi) in self.conn:
-            print("{} - {} - {} - {}".format(id_tiket, id_kereta, berangkat, waktu_berangkat, jumlah_kursi ))
-
-    def get_pembelian(self):
-        query = "SELECT * FROM pembelian"
-        self.conn.execute(query)
-        for (id_pembelian, id_penumpang, id_tiket, no_kursi, tgl_pembelian) in self.conn:
-            print("{} - {} - {} - {}".format(id_pembelian, id_penumpang, id_tiket, no_kursi, tgl_pembelian))
 
 config = Config()
-config.home_menu()
+config.sign_in_menu()
