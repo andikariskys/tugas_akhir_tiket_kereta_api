@@ -4,7 +4,7 @@ import time
 import random
 from datetime import datetime 
 
-class Config:
+class MainApp:
     def __init__(self):
         self.koneksi = mysql.connector.connect(user='root', database='tiket_kereta')
         self.conn = self.koneksi.cursor()
@@ -51,6 +51,7 @@ class Config:
         
         print(f"| {'-'*3} | {'-'*8} | {'-'*20} |")
 
+    def detail_pembelian(self):
         print("Tekan 'enter' untuk kembali atau masukkan ID untuk melihat detail tiket")
         pilih_id_pembelian = input("=> ")
         if pilih_id_pembelian != '':
@@ -70,6 +71,29 @@ class Config:
             print("Tekan 'enter' untuk kembali ke menu sebelumnya")
             input("=> ")
 
+    def ubah_rute_perjalanan(self):
+        print("Tekan 'enter' untuk kembali atau masukkan ID untuk mengubah stasiun tujuan")
+        pilih_id_pembelian = input("=> ")
+        if pilih_id_pembelian != '':
+            self.lihat_daftar_tiket()
+            print("Masukkan ID tiket")
+            pilih_id_tiket = input("=> ")
+            query = "UPDATE pembelian SET id_tiket='" + pilih_id_tiket + "' WHERE id_pembelian=" + pilih_id_pembelian
+            self.conn.execute(query)
+            self.koneksi.commit()
+            print("tujuan stasiun berhasil diubah")
+            time.sleep(3)
+    
+    def batalkan_pembelian(self):
+        print("Tekan 'enter' untuk kembali atau masukkan ID untuk membatalkan pembelian")
+        pilih_id_pembelian = input("=> ")
+        if pilih_id_pembelian != '':
+            query = "DELETE FROM pembelian WHERE id_pembelian=" + pilih_id_pembelian
+            self.conn.execute(query)
+            self.koneksi.commit()
+            print("tiket berhasil dibatalkan")
+            time.sleep(3)
+
     def sign_in_menu(self):
         ulangi = True
         while ulangi:
@@ -78,9 +102,11 @@ class Config:
             print("1. Lihat Daftar Tiket")
             print("2. Beli Tiket")
             print("3. Riwayat Pembelian Tiket")
-            print("4. Keluar")
+            print("4. Ubah rute perjalanan")
+            print("5. batalkan pembelian tiket")
+            print("6. Keluar")
             while True:
-                print("Masukkan pilihan Anda (1/2/3/4) lalu tekan 'enter'")
+                print("Masukkan pilihan Anda (1/2/3/4/5/6) lalu tekan 'enter'")
                 pilihan = input("=> ")
                 if pilihan == "1":
                     self.lihat_daftar_tiket()
@@ -93,8 +119,17 @@ class Config:
                     break
                 elif pilihan == "3":
                     self.riwayat_pembelian()
+                    self.detail_pembelian()
                     break
                 elif pilihan == "4":
+                    self.riwayat_pembelian()
+                    self.ubah_rute_perjalanan()
+                    break
+                elif pilihan == "5":
+                    self.riwayat_pembelian()
+                    self.batalkan_pembelian()
+                    break
+                elif pilihan == "6":
                     print("Sign Out berhasil")
                     time.sleep(3)
                     ulangi = False
@@ -165,5 +200,5 @@ class Config:
                 print("Pilihan yang Anda masukkan salah/tidak ada.")
 
 
-config = Config()
-config.sign_in_menu()
+app = MainApp()
+app.home_menu()
